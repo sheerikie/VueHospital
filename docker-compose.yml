@@ -1,0 +1,54 @@
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: collabmed-image
+    container_name: collabmed_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: collabmed_app
+      SERVICE_TAGS: dev
+    working_dir: /var/www/html
+    networks:
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: collabmed_app_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.22
+    container_name: collabmed_app_db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mariadb/collabmed_app_dump.sql:/docker-entrypoint-initdb.d/collabmed_app_dump.sql
+    environment:
+      MYSQL_DATABASE: collabmed_app
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: 
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - app-network
+
+#bridge n/ws are important when running stand-alone containers and your containers need to communicate
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
